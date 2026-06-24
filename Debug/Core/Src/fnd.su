@@ -1,0 +1,2 @@
+../Core/Src/fnd.c:6:6:FND_Shift_Data	32	static
+../Core/Src/fnd.c:45:6:FND_Scan	8	static

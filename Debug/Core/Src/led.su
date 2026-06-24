@@ -1,0 +1,8 @@
+../Core/Src/led.c:21:13:shift_out	24	static
+../Core/Src/led.c:40:13:led_all_on	8	static
+../Core/Src/led.c:41:13:led_all_off	8	static
+../Core/Src/led.c:44:6:LED_Bar_Depart	8	static
+../Core/Src/led.c:53:6:LED_Bar_Arrive	8	static
+../Core/Src/led.c:62:6:LED_Bar_Go_Up	8	static
+../Core/Src/led.c:70:6:LED_Bar_Go_Down	8	static
+../Core/Src/led.c:78:6:LED_Bar_Update	24	static

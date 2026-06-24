@@ -1,0 +1,4 @@
+../Core/Src/stepper.c:18:13:step_output	16	static
+../Core/Src/stepper.c:27:6:Motor_Start	16	static
+../Core/Src/stepper.c:36:6:Motor_Stop	8	static
+../Core/Src/stepper.c:47:6:Update_Elevator_Motor	16	static

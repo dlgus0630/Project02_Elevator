@@ -1,0 +1,8 @@
+../Core/Src/modbus.c:33:17:CRC16	4
+../Core/Src/modbus.c:51:17:Get_Register	8
+../Core/Src/modbus.c:70:16:Set_Register	5
+../Core/Src/modbus.c:94:13:Send_Response	1
+../Core/Src/modbus.c:105:13:Process_Frame	10
+../Core/Src/modbus.c:154:6:HAL_UART_RxCpltCallback	3
+../Core/Src/modbus.c:170:6:Modbus_Init	1
+../Core/Src/modbus.c:177:6:Modbus_Update	3

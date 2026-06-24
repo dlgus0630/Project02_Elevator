@@ -1,0 +1,8 @@
+../Core/Src/led.c:21:13:shift_out	3
+../Core/Src/led.c:40:13:led_all_on	1
+../Core/Src/led.c:41:13:led_all_off	1
+../Core/Src/led.c:44:6:LED_Bar_Depart	1
+../Core/Src/led.c:53:6:LED_Bar_Arrive	1
+../Core/Src/led.c:62:6:LED_Bar_Go_Up	1
+../Core/Src/led.c:70:6:LED_Bar_Go_Down	1
+../Core/Src/led.c:78:6:LED_Bar_Update	20

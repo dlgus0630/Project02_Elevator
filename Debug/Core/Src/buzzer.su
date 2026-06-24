@@ -1,0 +1,7 @@
+../Core/Src/buzzer.c:66:13:play_note	16	static
+../Core/Src/buzzer.c:77:13:start_sequence	16	static
+../Core/Src/buzzer.c:89:13:stop_buzzer	8	static
+../Core/Src/buzzer.c:98:6:Buzzer_Ding	8	static
+../Core/Src/buzzer.c:99:6:Buzzer_Dong	8	static
+../Core/Src/buzzer.c:100:6:Buzzer_Emergency	8	static
+../Core/Src/buzzer.c:103:6:Buzzer_Update	16	static
