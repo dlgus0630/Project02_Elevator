@@ -6,6 +6,9 @@
 /* 현재 층 전역 변수 (main.c에서 정의, 포토 ISR이 갱신) */
 extern volatile uint8_t current_floor;
 
+/* 이번 이동 중 2층 센서를 지나쳤는지 기록 (main.c에서 정의, E301 판정용) */
+extern volatile uint8_t floor2_transit_flag;
+
 /* 포토센서 인터럽트 처리 함수
  * 역할: 층 감지 후 current_floor 갱신 + 목표층 도달 시 Motor_Stop()만 수행.
  * LED·부저 등 도착 후속 처리는 메인루프 step 4에서 단일 처리한다. */

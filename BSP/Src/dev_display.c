@@ -4,6 +4,11 @@
 #include <string.h>
 #include <stdio.h>
 
+/* ── 오류코드 체계용 추가 플래그 (main.c에서 정의) ──
+ *  emergency_active/inspection_active는 dev_display.h에서 extern 처리됨. */
+extern volatile uint8_t floor_skip_active;     // 층 건너뜀(E301) 플래그
+extern volatile uint8_t move_timeout_active;   // 이동 타임아웃(E201) 플래그
+
 /* =========================================================
  * 1. LED 바 (74HC595) — led.c 로직 그대로 이식
  * ========================================================= */
@@ -90,7 +95,7 @@ void LED_Bar_Update(void)
 {
     uint32_t now = HAL_GetTick();
 
-    if (emergency_active || inspection_active) {
+    if (emergency_active || inspection_active || floor_skip_active || move_timeout_active) {
         if ((now / 500) % 2 == 0) led_shift_out(0xFF);
         else                      led_shift_out(0x00);
         return;
@@ -213,7 +218,7 @@ void FND_Shift_Data(uint8_t data)
 
 void FND_Scan(void)
 {
-    if (emergency_active)
+    if (emergency_active || floor_skip_active || move_timeout_active)
     {
         if ((HAL_GetTick() / 500) % 2 == 0) FND_Shift_Data(10);
         else                                 FND_Shift_Data(11);
@@ -382,7 +387,7 @@ void Display_Init(void)
     LCD_Init();
 }
 
-void Display_Update(Display_State_t state)
+void Display_Update(Display_State_t state, uint16_t error_code)
 {
     char line1[17];
     char line2[17];
@@ -394,6 +399,13 @@ void Display_Update(Display_State_t state)
             snprintf(line1, sizeof(line1), "[ FLOOR : %dF ]", current_floor);
             snprintf(line2, sizeof(line2), "Temp:%dC  H:%d%%",
                      (int)DHT_GetTemperature(), (int)DHT_GetHumidity());
+            /* 센서 계열 오류(E101/E102/E103)면 2번째 줄만 덮어쓴다 */
+            if (error_code == 101)
+                snprintf(line2, sizeof(line2), "T:%dC FAN:HIGH", (int)DHT_GetTemperature());
+            else if (error_code == 102)
+                snprintf(line2, sizeof(line2), "Sensor Timeout");
+            else if (error_code == 103)
+                snprintf(line2, sizeof(line2), "Sensor Data Err");
             break;
 
         case DISP_STATE_MOVING:
@@ -401,18 +413,33 @@ void Display_Update(Display_State_t state)
             snprintf(line1, sizeof(line1), "[ %dF  ->  %dF ]", current_floor, target_floor);
             snprintf(line2, sizeof(line2), "  MOVING %s...",
                      (target_floor > current_floor) ? "UP" : "DOWN");
+            /* 센서 계열 오류(E101/E102/E103)면 2번째 줄만 덮어쓴다 */
+            if (error_code == 101)
+                snprintf(line2, sizeof(line2), "T:%dC FAN:HIGH", (int)DHT_GetTemperature());
+            else if (error_code == 102)
+                snprintf(line2, sizeof(line2), "Sensor Timeout");
+            else if (error_code == 103)
+                snprintf(line2, sizeof(line2), "Sensor Data Err");
             break;
 
         case DISP_STATE_DOOR_OPEN:
             RGB_SetColor(RGB_GREEN);
             snprintf(line1, sizeof(line1), "[ FLOOR : %dF ]", current_floor);
             snprintf(line2, sizeof(line2), "* DOOR OPEN *");
+            /* 센서 계열 오류(E101/E102/E103)면 2번째 줄만 덮어쓴다 */
+            if (error_code == 101)
+                snprintf(line2, sizeof(line2), "T:%dC FAN:HIGH", (int)DHT_GetTemperature());
+            else if (error_code == 102)
+                snprintf(line2, sizeof(line2), "Sensor Timeout");
+            else if (error_code == 103)
+                snprintf(line2, sizeof(line2), "Sensor Data Err");
             break;
 
         case DISP_STATE_ERROR:
-            // 0.5초 주기로 RGB 점멸 (LED바/FND 비상 점멸과 동일 주기로 통일)
             RGB_SetColor(((HAL_GetTick() / 500) % 2 == 0) ? RGB_RED : RGB_OFF);
-            snprintf(line1, sizeof(line1), "! EMERGENCY !");
+            if (error_code == 301)      snprintf(line1, sizeof(line1), "!POSITION ERR!");
+            else if (error_code == 201) snprintf(line1, sizeof(line1), "!MOVE TIMEOUT!");
+            else                        snprintf(line1, sizeof(line1), "! EMERGENCY !");
             snprintf(line2, sizeof(line2), "System Locked");
             break;
 

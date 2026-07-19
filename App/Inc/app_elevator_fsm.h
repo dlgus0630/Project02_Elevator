@@ -25,5 +25,6 @@ typedef enum {
 void            Elevator_FSM_Init(void);     // FSM 상태 초기화 + Display_Init 호출
 void            Elevator_FSM_Update(void);   // 메인루프에서 매 tick 호출
 ElevatorState_t Elevator_FSM_GetState(void); // modbus 등 외부 조회용 접근자
+uint16_t        Elevator_FSM_GetErrorCode(void);  // modbus 등 외부 조회용 접근자 (0/101/102/103/201/301/401/402)
 
 #endif /* INC_APP_ELEVATOR_FSM_H_ */

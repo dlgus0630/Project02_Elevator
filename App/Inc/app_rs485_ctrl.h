@@ -21,6 +21,7 @@ typedef enum {
     REG_HUMIDITY_X10    = 5,   // 습도*10           (R)
     REG_DHT_STATUS      = 6,   // DHT 상태          (R)  0정상/1타임아웃/2체크섬오류
     REG_INSPECTION      = 7,   // 점검 모드 상태     (R/W, 0=정상, 1=점검중)
+    REG_ERROR_CODE      = 8,   // 통합 오류코드 (R) — 0/101/102/103/201/301/401/402
 } ModbusReg_t;
 
 void Modbus_Init(void);     // 한 번 호출 — UART 수신 인터럽트 시작

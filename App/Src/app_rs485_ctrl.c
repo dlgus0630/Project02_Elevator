@@ -21,6 +21,8 @@ extern volatile uint8_t current_floor;
 extern volatile uint8_t target_floor;
 extern volatile uint8_t emergency_active;
 extern volatile uint8_t inspection_active;
+extern volatile uint8_t floor_skip_active;
+extern volatile uint8_t move_timeout_active;
 
 /* ── 수신 버퍼 ── */
 #define RX_BUF_SIZE   32
@@ -62,6 +64,7 @@ static uint16_t Get_Register(uint16_t addr)
         case REG_HUMIDITY_X10:    return (uint16_t)(DHT_GetHumidity()    * 10.0f);
         case REG_DHT_STATUS:      return (uint16_t)DHT_GetLastStatus();
         case REG_INSPECTION:      return inspection_active;
+        case REG_ERROR_CODE:      return Elevator_FSM_GetErrorCode();
         default:                  return 0;
     }
 }
@@ -84,6 +87,13 @@ static uint8_t Set_Register(uint16_t addr, uint16_t value)
 
         case REG_EMERGENCY:
             emergency_active = (value != 0) ? 1 : 0;
+            if (value == 0)
+            {
+                /* "비상해제" 버튼을 범용 잠금해제로도 사용 —
+                   위치인식오류(E301)/이동타임아웃(E201)도 같이 푼다 */
+                floor_skip_active   = 0;
+                move_timeout_active = 0;
+            }
             return 1;
 
         case REG_INSPECTION:

@@ -54,6 +54,9 @@ volatile uint8_t  current_floor   = 1;   // 현재 층 (포토 ISR이 갱신)
 volatile uint8_t  target_floor    = 1;   // 목표 층 (버튼이 설정)
 volatile uint8_t  emergency_active = 0;  // 비상정지 플래그 (ISR이 세팅)
 volatile uint8_t  inspection_active = 0;  // 점검 모드 플래그 (관리실 원격 명령으로 세팅/해제)
+volatile uint8_t  move_timeout_active = 0;   // 이동 타임아웃(E201) 플래그
+volatile uint8_t  floor_skip_active   = 0;   // 층 건너뜀(E301) 플래그
+volatile uint8_t  floor2_transit_flag = 0;   // 이번 이동 중 2층 센서를 지나쳤는지(E301 판정용)
 /* 출발·도착 시퀀스는 app_elevator_fsm.c의 4-state FSM으로 이관됨.
    pending_action/pending_tick/is_moving/emergency_announced는 제거되고
    FSM 내부 static 변수(s_state/s_door_phase/s_phase_tick)로 대체됨. */

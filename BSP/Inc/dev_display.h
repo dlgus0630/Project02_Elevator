@@ -72,7 +72,7 @@ typedef enum {
 } Display_State_t;
 
 void Display_Init(void);                 // RGB_Init + LCD_Init 한번에
-void Display_Update(Display_State_t state); // 메인루프에서 매 tick 호출(논블로킹)
+void Display_Update(Display_State_t state, uint16_t error_code); // 메인루프에서 매 tick 호출(논블로킹)
 
 /* =========================================================
  * 6. 디버그용 — I2C 버스에 실제로 응답하는 장치 주소를 UART로 출력

@@ -22,6 +22,7 @@ void Handle_Photo_Interrupt(uint16_t GPIO_Pin)
 
     /* ── 현재 층 갱신 ── */
     current_floor = detected;
+    if (detected == 2) floor2_transit_flag = 1;   // 2층 센서를 지나쳤음을 기록 (E301 판정용)
     printf("[PHOTO] floor=%d target=%d\r\n", current_floor, target_floor);
 
     /* ── 목표층 도달 → 모터만 즉시 정지 ──

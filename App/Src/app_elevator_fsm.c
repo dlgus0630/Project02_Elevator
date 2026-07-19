@@ -7,6 +7,15 @@
 #include "dev_stepper.h"   // Motor_Start/Stop, Update_Elevator_Motor, DIR_CW/CCW
 #include "dev_buzzer.h"    // Buzzer_Ding/Dong/Emergency
 #include "dev_photo.h"      // Photo_DetectCurrentFloor — 부팅 시 실제 위치 확인용
+#include "dev_dht.h"       // DHT_GetTemperature/DHT_GetLastStatus — 오류코드 계산용
+
+/* ── main.c의 오류 관련 전역 (extern) ──
+ *  emergency_active/inspection_active/current_floor/target_floor는
+ *  dev_display.h·dev_photo.h를 통해 이미 extern으로 들어와 있고,
+ *  아래 세 플래그는 이번 오류코드 체계에서 새로 추가된 것이다. */
+extern volatile uint8_t move_timeout_active;   // 이동 타임아웃(E201) 플래그
+extern volatile uint8_t floor_skip_active;     // 층 건너뜀(E301) 플래그
+extern volatile uint8_t floor2_transit_flag;   // 이번 이동 중 2층 센서 통과 여부(E301 판정용)
 
 /* ── 시간 상수 (ms) ── */
 #define DOOR_MOVE_MS   2000   // 서보가 0°↔180° 이동하는 데 걸리는 시간
@@ -28,6 +37,18 @@ typedef enum {
 static ElevatorState_t s_state      = ELEV_STATE_IDLE;
 static DoorPhase_t     s_door_phase = DOOR_PHASE_SETTLE;
 static uint32_t        s_phase_tick = 0;   // 현재 페이즈 진입 시각
+
+#define MOVE_TIMEOUT_1F_MS  60000    // 1개층 이동(예: 1→2, 2→3) 타임아웃 1분(실측 확정값)
+#define MOVE_TIMEOUT_2F_MS  120000   // 2개층 이동(1↔3, 중간 2층 경유) 타임아웃 2분(실측 확정값)
+#define TEMP_ALARM_ON_C   31.0f
+#define TEMP_ALARM_OFF_C  28.0f
+
+/* ── 오류코드 판정용 내부 상태 ── */
+static uint32_t s_move_start_tick = 0;   // MOVING 진입 시각 (E201 판정용)
+static uint8_t  s_depart_floor    = 1;   // 이번 이동의 출발층 (E301 판정용)
+static uint32_t s_move_timeout_ms = MOVE_TIMEOUT_1F_MS;   // 이번 이동에 적용할 타임아웃(출발 시 이동거리 보고 결정)
+static uint8_t  s_temp_alarm_latched = 0; // E101 히스테리시스 래치 (31도 이상에서 세팅, 28도 이하로 내려가야 해제)
+static uint16_t s_error_code      = 0;   // 매 tick 계산되는 최종 오류코드
 
 /* ──────────────────────────────────────────────────────────
  * 문 개폐 페이즈 진입 — 진입 액션을 여기서 한 번만 수행
@@ -98,8 +119,28 @@ static void FSM_HandleIdle(void)
  * ────────────────────────────────────────────────────────── */
 static void FSM_HandleMoving(void)
 {
+    /* E201: 이동 타임아웃 감지 — 출발 시 결정된 s_move_timeout_ms(1개층/2개층) 기준 */
+    if (HAL_GetTick() - s_move_start_tick >= s_move_timeout_ms)
+    {
+        move_timeout_active = 1;
+        printf("[ERROR] E201 move timeout\r\n");
+        return;   /* 다음 tick의 Elevator_FSM_Update() 엣지 블록이 ERROR로 전환 */
+    }
+
     if (current_floor == target_floor)
     {
+        /* E301: 층 건너뜀 감지 — 1<->3 왕복(중간층 2층 존재)일 때만 성립.
+           출발층과 목표층이 1<->3인데 2층 센서를 한 번도 못 거쳤으면 건너뛴 것. */
+        uint8_t multi_floor_trip = (s_depart_floor == 1 && target_floor == 3) ||
+                                    (s_depart_floor == 3 && target_floor == 1);
+        if (multi_floor_trip && !floor2_transit_flag)
+        {
+            floor_skip_active = 1;
+            printf("[ERROR] E301 floor skip detected (depart=%d target=%d)\r\n",
+                   s_depart_floor, target_floor);
+            return;
+        }
+
         FND_Shift_Data(current_floor);
         LED_Bar_Arrive();                     // 도착 알림: 3회 점멸 후 소등
         Door_EnterPhase(DOOR_PHASE_SETTLE);   // 하차 경로: SETTLE 페이즈부터
@@ -150,6 +191,14 @@ static void FSM_HandleDoorOpen(void)
                 {
                     /* 탑승 경로: 모터 출발 → MOVING */
                     LED_Bar_Depart();
+                    s_move_start_tick   = HAL_GetTick();   // E201 타임아웃 기준시각 기록
+                    s_depart_floor      = current_floor;   // E301 판정용 출발층 기록
+                    floor2_transit_flag = 0;               // 이번 이동의 2층 통과 여부 리셋
+                    /* 이동거리(1개층/2개층)에 따라 이번 이동에 적용할 타임아웃 결정.
+                       1<->3층 왕복(중간 2층 경유)만 2개층 이동, 나머지는 전부 1개층 이동. */
+                    s_move_timeout_ms = (current_floor == 1 && target_floor == 3) ||
+                                         (current_floor == 3 && target_floor == 1)
+                                         ? MOVE_TIMEOUT_2F_MS : MOVE_TIMEOUT_1F_MS;
                     if (target_floor > current_floor)
                     {
                         Motor_Start(DIR_CW);
@@ -183,7 +232,7 @@ static void FSM_HandleDoorOpen(void)
  * ────────────────────────────────────────────────────────── */
 static void FSM_HandleError(void)
 {
-    if (!emergency_active)
+    if (!emergency_active && !floor_skip_active && !move_timeout_active)
     {
         Buzzer_Dong();                  // 문 닫힘 안내음
         Servo_Door_Close();             // 비상 해제 시 문 닫기
@@ -208,6 +257,41 @@ static void FSM_HandleInspection(void)
         s_state = ELEV_STATE_IDLE;
         printf("[INSPECTION] Cleared. Ready.\r\n");
     }
+}
+
+/* ──────────────────────────────────────────────────────────
+ * 최종 오류코드 계산 — 사용자가 확정한 "순서형 덮어쓰기" 방식.
+ * 낮은 우선순위부터 세팅하고, 높은 우선순위가 발생하면 덮어쓴다.
+ * 최종적으로 물리 비상정지(401)가 항상 이긴다.
+ * ────────────────────────────────────────────────────────── */
+static uint16_t Compute_Error_Code(void)
+{
+    uint16_t code = 0;   // E000 정상
+
+    /* E101: 고온 경고 (히스테리시스: 31도 이상에서 래치, 28도 이하에서 해제) */
+    if (!s_temp_alarm_latched && DHT_GetTemperature() >= TEMP_ALARM_ON_C)
+        s_temp_alarm_latched = 1;
+    else if (s_temp_alarm_latched && DHT_GetTemperature() <= TEMP_ALARM_OFF_C)
+        s_temp_alarm_latched = 0;
+    if (s_temp_alarm_latched) code = 101;
+
+    /* E102/E103: DHT 센서 상태 (체크섬오류가 타임아웃보다 우선) */
+    if (DHT_GetLastStatus() == 1) code = 102;
+    if (DHT_GetLastStatus() == 2) code = 103;
+
+    /* E201: 이동 타임아웃 */
+    if (move_timeout_active) code = 201;
+
+    /* E301: 위치 인식 오류(층 건너뜀) */
+    if (floor_skip_active) code = 301;
+
+    /* E402: 점검모드 */
+    if (inspection_active) code = 402;
+
+    /* E401: 물리 비상정지 — 절대 최우선, 무조건 최종 승자 */
+    if (emergency_active) code = 401;
+
+    return code;
 }
 
 /* ==========================================================
@@ -240,15 +324,16 @@ void Elevator_FSM_Update(void)
     /* 1) 비상 감지 — 모든 상태에서 최우선.
      *    모터 정지는 EXTI ISR에서 이미 수행되었으나 이중 확인.
      *    ERROR 진입 엣지에서만 연출/부저를 1회 실행. */
-    if (emergency_active && s_state != ELEV_STATE_ERROR)
+    if ((emergency_active || floor_skip_active || move_timeout_active) && s_state != ELEV_STATE_ERROR)
     {
         Motor_Stop();
-        LED_Bar_Arrive();               // led.c의 emergency 분기가 점멸 처리
-        Buzzer_Emergency();             // "띵" 3회 연속 비상음
-        Servo_Door_Open();              // 모터 정지 후 안전을 위해 문 자동 개방
-        Door_EnterPhase(DOOR_PHASE_SETTLE);   // 사설머신 리셋
+        LED_Bar_Arrive();
+        Buzzer_Emergency();
+        Servo_Door_Open();
+        Door_EnterPhase(DOOR_PHASE_SETTLE);
         s_state = ELEV_STATE_ERROR;
-        printf("[EMERGENCY] Stop button pressed!\r\n");
+        printf("[EMERGENCY] Lockdown! (emergency=%d skip=%d timeout=%d)\r\n",
+               emergency_active, floor_skip_active, move_timeout_active);
     }
 
     /* 1-2) 점검 모드 감지 — 관리실 원격 명령(inspection_active)으로 진입.
@@ -276,14 +361,22 @@ void Elevator_FSM_Update(void)
         default:                    break;
     }
 
-    /* 3) 모터 논블로킹 스텝 — Display_Update(블로킹 I2C)보다 먼저 호출 */
+    /* 3) 최종 오류코드 계산 (순서형 덮어쓰기) */
+    s_error_code = Compute_Error_Code();
+
+    /* 4) 모터 논블로킹 스텝 — Display_Update(블로킹 I2C)보다 먼저 호출 */
     Update_Elevator_Motor();
 
-    /* 4) 통합 상태 표시 (RGB + LCD). enum 값이 Display_State_t와 일치 */
-    Display_Update((Display_State_t)s_state);
+    /* 5) 통합 상태 표시 (RGB + LCD). enum 값이 Display_State_t와 일치 */
+    Display_Update((Display_State_t)s_state, s_error_code);
 }
 
 ElevatorState_t Elevator_FSM_GetState(void)
 {
     return s_state;
+}
+
+uint16_t Elevator_FSM_GetErrorCode(void)
+{
+    return s_error_code;
 }
