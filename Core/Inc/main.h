@@ -57,6 +57,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define RGB_Red_Pin GPIO_PIN_0
+#define RGB_Red_GPIO_Port GPIOA
+#define RGB_Green_Pin GPIO_PIN_1
+#define RGB_Green_GPIO_Port GPIOA
+#define RGB_Blue_Pin GPIO_PIN_4
+#define RGB_Blue_GPIO_Port GPIOA
 #define Buzzer_TIM2_Pin GPIO_PIN_5
 #define Buzzer_TIM2_GPIO_Port GPIOA
 #define Servo_TIM3_Pin GPIO_PIN_6
@@ -99,12 +105,14 @@ void Error_Handler(void);
 #define Photo_EXTIA11_EXTI_IRQn EXTI15_10_IRQn
 #define Stepper_OutputA12_Pin GPIO_PIN_12
 #define Stepper_OutputA12_GPIO_Port GPIOA
+#define FND_OutputB3_Pin GPIO_PIN_3
+#define FND_OutputB3_GPIO_Port GPIOB
+#define FND_OutputB4_Pin GPIO_PIN_4
+#define FND_OutputB4_GPIO_Port GPIOB
+#define FND_OutputB5_Pin GPIO_PIN_5
+#define FND_OutputB5_GPIO_Port GPIOB
 #define LED_OutputB6_Pin GPIO_PIN_6
 #define LED_OutputB6_GPIO_Port GPIOB
-#define FND_OutputB8_Pin GPIO_PIN_8
-#define FND_OutputB8_GPIO_Port GPIOB
-#define FND_OutputB9_Pin GPIO_PIN_9
-#define FND_OutputB9_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

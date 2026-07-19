@@ -1,0 +1,7 @@
+../BSP/Src/dev_buzzer.c:66:13:play_note	1
+../BSP/Src/dev_buzzer.c:77:13:start_sequence	1
+../BSP/Src/dev_buzzer.c:89:13:stop_buzzer	1
+../BSP/Src/dev_buzzer.c:98:6:Buzzer_Ding	1
+../BSP/Src/dev_buzzer.c:99:6:Buzzer_Dong	1
+../BSP/Src/dev_buzzer.c:100:6:Buzzer_Emergency	1
+../BSP/Src/dev_buzzer.c:103:6:Buzzer_Update	10

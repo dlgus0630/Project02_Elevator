@@ -51,7 +51,8 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LED_Output_Pin|Stepper_OutputA12_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, RGB_Red_Pin|RGB_Green_Pin|RGB_Blue_Pin|LED_Output_Pin
+                          |Stepper_OutputA12_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, Stepper_Output_Pin|Stepper_OutputC6_Pin|LED_OutputC7_Pin|Stepper_OutputC8_Pin
@@ -61,10 +62,12 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(DHT_Output_GPIO_Port, DHT_Output_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LED_OutputB6_Pin|FND_OutputB8_Pin|FND_OutputB9_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, FND_OutputB3_Pin|FND_OutputB4_Pin|FND_OutputB5_Pin|LED_OutputB6_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : LED_Output_Pin Stepper_OutputA12_Pin */
-  GPIO_InitStruct.Pin = LED_Output_Pin|Stepper_OutputA12_Pin;
+  /*Configure GPIO pins : RGB_Red_Pin RGB_Green_Pin RGB_Blue_Pin LED_Output_Pin
+                           Stepper_OutputA12_Pin */
+  GPIO_InitStruct.Pin = RGB_Red_Pin|RGB_Green_Pin|RGB_Blue_Pin|LED_Output_Pin
+                          |Stepper_OutputA12_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -110,8 +113,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_OutputB6_Pin FND_OutputB8_Pin FND_OutputB9_Pin */
-  GPIO_InitStruct.Pin = LED_OutputB6_Pin|FND_OutputB8_Pin|FND_OutputB9_Pin;
+  /*Configure GPIO pins : FND_OutputB3_Pin FND_OutputB4_Pin FND_OutputB5_Pin LED_OutputB6_Pin */
+  GPIO_InitStruct.Pin = FND_OutputB3_Pin|FND_OutputB4_Pin|FND_OutputB5_Pin|LED_OutputB6_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
