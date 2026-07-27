@@ -387,6 +387,21 @@ void Display_Init(void)
     LCD_Init();
 }
 
+/* 센서 계열 오류(E101/E102/E103)면 line2를 덮어쓰고 1을 반환, 아니면 0을 반환.
+   IDLE/MOVING/DOOR_OPEN 세 상태 모두 이 처리가 동일해서 공용 헬퍼로 뺐다. */
+static uint8_t Apply_SensorErrorLine2(char *line2, size_t size, uint16_t error_code)
+{
+    if (error_code == 101)
+        snprintf(line2, size, "T:%dC FAN:HIGH", (int)DHT_GetTemperature());
+    else if (error_code == 102)
+        snprintf(line2, size, "Sensor Timeout");
+    else if (error_code == 103)
+        snprintf(line2, size, "Sensor Data Err");
+    else
+        return 0;
+    return 1;
+}
+
 void Display_Update(Display_State_t state, uint16_t error_code)
 {
     char line1[17];
@@ -397,42 +412,24 @@ void Display_Update(Display_State_t state, uint16_t error_code)
         case DISP_STATE_IDLE:
             RGB_SetColor(RGB_GREEN);
             snprintf(line1, sizeof(line1), "[ FLOOR : %dF ]", current_floor);
-            snprintf(line2, sizeof(line2), "Temp:%dC  H:%d%%",
-                     (int)DHT_GetTemperature(), (int)DHT_GetHumidity());
-            /* 센서 계열 오류(E101/E102/E103)면 2번째 줄만 덮어쓴다 */
-            if (error_code == 101)
-                snprintf(line2, sizeof(line2), "T:%dC FAN:HIGH", (int)DHT_GetTemperature());
-            else if (error_code == 102)
-                snprintf(line2, sizeof(line2), "Sensor Timeout");
-            else if (error_code == 103)
-                snprintf(line2, sizeof(line2), "Sensor Data Err");
+            if (!Apply_SensorErrorLine2(line2, sizeof(line2), error_code))
+                snprintf(line2, sizeof(line2), "Temp:%dC  H:%d%%",
+                         (int)DHT_GetTemperature(), (int)DHT_GetHumidity());
             break;
 
         case DISP_STATE_MOVING:
             RGB_SetColor(RGB_BLUE);
             snprintf(line1, sizeof(line1), "[ %dF  ->  %dF ]", current_floor, target_floor);
-            snprintf(line2, sizeof(line2), "  MOVING %s...",
-                     (target_floor > current_floor) ? "UP" : "DOWN");
-            /* 센서 계열 오류(E101/E102/E103)면 2번째 줄만 덮어쓴다 */
-            if (error_code == 101)
-                snprintf(line2, sizeof(line2), "T:%dC FAN:HIGH", (int)DHT_GetTemperature());
-            else if (error_code == 102)
-                snprintf(line2, sizeof(line2), "Sensor Timeout");
-            else if (error_code == 103)
-                snprintf(line2, sizeof(line2), "Sensor Data Err");
+            if (!Apply_SensorErrorLine2(line2, sizeof(line2), error_code))
+                snprintf(line2, sizeof(line2), "  MOVING %s...",
+                         (target_floor > current_floor) ? "UP" : "DOWN");
             break;
 
         case DISP_STATE_DOOR_OPEN:
             RGB_SetColor(RGB_GREEN);
             snprintf(line1, sizeof(line1), "[ FLOOR : %dF ]", current_floor);
-            snprintf(line2, sizeof(line2), "* DOOR OPEN *");
-            /* 센서 계열 오류(E101/E102/E103)면 2번째 줄만 덮어쓴다 */
-            if (error_code == 101)
-                snprintf(line2, sizeof(line2), "T:%dC FAN:HIGH", (int)DHT_GetTemperature());
-            else if (error_code == 102)
-                snprintf(line2, sizeof(line2), "Sensor Timeout");
-            else if (error_code == 103)
-                snprintf(line2, sizeof(line2), "Sensor Data Err");
+            if (!Apply_SensorErrorLine2(line2, sizeof(line2), error_code))
+                snprintf(line2, sizeof(line2), "* DOOR OPEN *");
             break;
 
         case DISP_STATE_ERROR:
