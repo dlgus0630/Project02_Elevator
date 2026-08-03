@@ -1,9 +1,0 @@
-../App/Src/app_elevator_fsm.c:35:13:Door_EnterPhase	3
-../App/Src/app_elevator_fsm.c:63:13:FSM_HandleIdle	7
-../App/Src/app_elevator_fsm.c:99:13:FSM_HandleMoving	2
-../App/Src/app_elevator_fsm.c:115:13:FSM_HandleDoorOpen	11
-../App/Src/app_elevator_fsm.c:184:13:FSM_HandleError	2
-../App/Src/app_elevator_fsm.c:201:13:FSM_HandleInspection	2
-../App/Src/app_elevator_fsm.c:216:6:Elevator_FSM_Init	2
-../App/Src/app_elevator_fsm.c:238:6:Elevator_FSM_Update	11
-../App/Src/app_elevator_fsm.c:286:17:Elevator_FSM_GetState	1

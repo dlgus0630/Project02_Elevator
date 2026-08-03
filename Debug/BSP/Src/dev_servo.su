@@ -1,3 +1,0 @@
-../BSP/Src/dev_servo.c:5:6:Servo_Init	8	static
-../BSP/Src/dev_servo.c:14:6:Servo_Door_Open	8	static
-../BSP/Src/dev_servo.c:21:6:Servo_Door_Close	8	static

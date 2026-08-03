@@ -1,2 +1,0 @@
-../BSP/Src/dev_photo.c:8:6:Handle_Photo_Interrupt	24	static
-../BSP/Src/dev_photo.c:40:9:Photo_DetectCurrentFloor	8	static
