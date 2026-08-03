@@ -40,10 +40,10 @@ void FND_Scan(void);
  * ========================================================= */
 typedef enum {
     RGB_OFF = 0,
-    RGB_GREEN,   // STATE_IDLE
-    RGB_YELLOW,  // STATE_MOVING (R+G)
-    RGB_RED,     // STATE_ERROR (점멸은 Display_Update가 처리)
-    RGB_BLUE     // STATE_INSPECTION
+    RGB_GREEN,   // 대기(IDLE) / 문 열림(DOOR_OPEN)
+    RGB_YELLOW,  // 점검 모드(INSPECTION), R+G 혼합 — 점멸은 Display_Update가 처리
+    RGB_RED,     // 에러(ERROR) — 점멸은 Display_Update가 처리
+    RGB_BLUE     // 이동 중(MOVING)
 } RGB_Color_t;
 
 void RGB_Init(void);
@@ -55,7 +55,6 @@ void RGB_SetColor(RGB_Color_t color);
 #define LCD_I2C_ADDR   (0x27 << 1)  // 백팩 기본 주소(0x27). 안 뜨면 0x3F로 변경
 
 void LCD_Init(void);
-void LCD_Clear(void);
 void LCD_SetCursor(uint8_t row, uint8_t col);
 void LCD_Print(const char *str);
 

@@ -10,7 +10,6 @@ extern TIM_HandleTypeDef htim2;
 #define NOTE_B4    2024   // 494 Hz
 #define NOTE_D5    1702   // 587 Hz
 #define NOTE_E5    1516   // 659 Hz
-#define NOTE_A5    1135   // 880 Hz (비상음용)
 
 /* 부저 제어 함수 */
 void Buzzer_Ding(void);       // "띵~" (도착/문 열림)

@@ -21,7 +21,6 @@
 #include "dev_display.h"
 #include "dev_photo.h"
 #include "dev_stepper.h"
-#include "dev_button.h"
 #include "dev_servo.h"
 #include "dev_buzzer.h"
 #include "dev_dht.h"
@@ -36,10 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-/* ── 시간 상수 (ms) ── */
-#define DOOR_MOVE_MS   2000   // 서보가 0°↔180° 이동하는 데 걸리는 시간
-#define BOARD_WAIT_MS  3000   // 문이 열린 뒤 탑승/하차 대기 시간
-#define SETTLE_MS      3000   // 도착 후 관성 안정화 대기 시간
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -57,9 +53,6 @@ volatile uint8_t  inspection_active = 0;  // 점검 모드 플래그 (관리실 
 volatile uint8_t  move_timeout_active = 0;   // 이동 타임아웃(E201) 플래그
 volatile uint8_t  floor_skip_active   = 0;   // 층 건너뜀(E301) 플래그
 volatile uint8_t  floor2_transit_flag = 0;   // 이번 이동 중 2층 센서를 지나쳤는지(E301 판정용)
-/* 출발·도착 시퀀스는 app_elevator_fsm.c의 4-state FSM으로 이관됨.
-   pending_action/pending_tick/is_moving/emergency_announced는 제거되고
-   FSM 내부 static 변수(s_state/s_door_phase/s_phase_tick)로 대체됨. */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

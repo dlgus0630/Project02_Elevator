@@ -345,12 +345,6 @@ void LCD_Init(void)
     HAL_Delay(2);
 }
 
-void LCD_Clear(void)
-{
-    lcd_command(0x01);
-    HAL_Delay(2);
-}
-
 void LCD_SetCursor(uint8_t row, uint8_t col)
 {
     uint8_t row_offsets[] = {0x00, 0x40};

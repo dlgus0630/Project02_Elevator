@@ -140,10 +140,6 @@ static void Process_Frame(uint8_t *buf, uint8_t len)
     uint8_t  func = buf[1];
     uint16_t addr = (uint16_t)((buf[2] << 8) | buf[3]);
 
-    /* 임시 진단: 주소/CRC 검증까지 통과한 유효한 요청인지 확인 */
-    printf("[RS485 VALID] t=%lu func=%02X addr=%u\r\n",
-           (unsigned long)HAL_GetTick(), func, addr);
-
     if (func == 0x03)   /* ── 레지스터 읽기 (Read Holding Registers) ── */
     {
         uint16_t qty = (uint16_t)((buf[4] << 8) | buf[5]);
@@ -160,9 +156,6 @@ static void Process_Frame(uint8_t *buf, uint8_t len)
             resp[3 + i * 2]     = (uint8_t)(val >> 8);
             resp[3 + i * 2 + 1] = (uint8_t)(val & 0xFF);
         }
-        /* 임시 진단: 응답을 실제로 내보내려고 시도하는지 확인 */
-        printf("[RS485 SEND] t=%lu sending %u bytes\r\n",
-               (unsigned long)HAL_GetTick(), (unsigned)(3 + qty * 2 + 2));
         Send_Response(resp, 3 + qty * 2);
     }
     else if (func == 0x06)   /* ── 단일 레지스터 쓰기 (Write Single Register) ── */
@@ -212,18 +205,6 @@ void Modbus_Update(void)
 
     if (HAL_GetTick() - s_last_byte_tick >= 5)
     {
-        /* ── 임시 진단: RS485 통신 두절 원인 추적용 ──
-           USART1(Modbus)에 뭐라도 도착은 하는지, 도착했다면 내용이 뭔지
-           그대로 찍어본다. 관리실 쪽 [RS485 TX] 로그와 시각(t=)을 맞춰서
-           실제 요청이 도착하는 건지, 그냥 버스 잡음인지 구분한다.
-           원인 확인되면 반드시 지울 것. */
-        printf("[RS485 RX] t=%lu len=%u raw:", (unsigned long)HAL_GetTick(), s_rx_len);
-        for (uint8_t i = 0; i < s_rx_len; i++)
-        {
-            printf(" %02X", s_rx_buf[i]);
-        }
-        printf("\r\n");
-
         Process_Frame(s_rx_buf, s_rx_len);
         s_rx_len = 0;
     }

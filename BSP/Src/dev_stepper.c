@@ -1,5 +1,4 @@
 #include "dev_stepper.h"
-#include "main.h"
 #include <stdio.h>
 
 /* ── 하프스텝 시퀀스 (8단계) ──
