@@ -7,7 +7,10 @@ extern volatile uint8_t target_floor;
 
 void Handle_Photo_Interrupt(uint16_t GPIO_Pin)
 {
-    /* ── 디바운싱 300ms ── */
+    /* ── 디바운싱 300ms ──
+     * 카가 센서 슬릿을 통과할 때 광 경계에서 엣지가 여러 번 튀어 같은 층이
+     * 중복 감지되는 것을 막는다. 3개 센서가 공유하는 static 변수라, 인접 층을
+     * 300ms 안에 연달아 지날 만큼 빠른 이동은 없다는 전제에 기댄다. */
     static uint32_t last_time = 0;
     uint32_t now = HAL_GetTick();
     if (now - last_time < 300) return;
@@ -36,8 +39,9 @@ void Handle_Photo_Interrupt(uint16_t GPIO_Pin)
     }
 }
 
-/* 3개 센서 핀을 직접 레벨로 읽는다. 풀업+FALLING 설정이므로 LOW(RESET)면
- * 그 층 센서 위에 실제로 정지해 있다는 뜻. */
+/* 부팅 시 위치 확인용. 인터럽트는 엣지(변화 순간)에만 걸리므로 전원을 켤 때
+ * 이미 어느 층에 서 있으면 감지되지 않는다. 그래서 3개 센서 핀을 직접 레벨로
+ * 읽는다. 풀업+FALLING 설정이라 LOW(RESET)면 그 층 센서 위에 있다는 뜻. */
 uint8_t Photo_DetectCurrentFloor(void)
 {
     if (HAL_GPIO_ReadPin(Photo_EXTIA11_GPIO_Port, Photo_EXTIA11_Pin) == GPIO_PIN_RESET) return 1;

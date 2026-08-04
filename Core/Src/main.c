@@ -46,13 +46,15 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint8_t  current_floor   = 1;   // 현재 층 (포토 ISR이 갱신)
-volatile uint8_t  target_floor    = 1;   // 목표 층 (버튼이 설정)
-volatile uint8_t  emergency_active = 0;  // 비상정지 플래그 (ISR이 세팅)
-volatile uint8_t  inspection_active = 0;  // 점검 모드 플래그 (관리실 원격 명령으로 세팅/해제)
-volatile uint8_t  move_timeout_active = 0;   // 이동 타임아웃(E201) 플래그
-volatile uint8_t  floor_skip_active   = 0;   // 층 건너뜀(E301) 플래그
-volatile uint8_t  floor2_transit_flag = 0;   // 이번 이동 중 2층 센서를 지나쳤는지(E301 판정용)
+/* 아래 전역들은 ISR과 메인루프가 함께 읽고 쓰므로 전부 volatile.
+   App/BSP 레이어에서 extern으로 참조한다. */
+volatile uint8_t  current_floor   = 1;   // 현재 층 — 포토센서 ISR이 갱신
+volatile uint8_t  target_floor    = 1;   // 목표 층 — 층 버튼 및 RS-485 원격 명령이 설정
+volatile uint8_t  emergency_active = 0;  // 비상정지(E401) 플래그 — PA8 EXTI ISR이 세팅
+volatile uint8_t  inspection_active = 0; // 점검모드(E402) 플래그 — 관제실 RS-485 명령으로 세팅/해제
+volatile uint8_t  move_timeout_active = 0;   // 이동 타임아웃(E201) 플래그 — FSM이 세팅, 관제실 리셋으로 해제
+volatile uint8_t  floor_skip_active   = 0;   // 층 건너뜀(E301) 플래그 — FSM이 세팅, 관제실 리셋으로 해제
+volatile uint8_t  floor2_transit_flag = 0;   // 이번 이동 중 2층 센서를 지나쳤는지 — 1<->3층 이동의 E301 판정용
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -105,7 +107,7 @@ int main(void)
   Modbus_Init();
   Servo_Init();
   FND_Shift_Data(current_floor);
-  Elevator_FSM_Init();               // FSM 상태 초기화 + Display_Init(RGB+LCD)
+  Elevator_FSM_Init();               // FSM 초기화 + Display_Init(RGB+LCD) + 부팅 시 실제 층 감지(호밍)
   printf("=== Elevator Start ===\r\n");
 
   uint32_t last_alive_tick = 0;
@@ -119,18 +121,19 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    /* 비상·버튼·4-state 전이·모터 스텝·상태표시(RGB+LCD)를 전부 처리 */
+    /* 비상·점검 감지, 버튼 처리, 5-state(IDLE/MOVING/DOOR_OPEN/ERROR/INSPECTION) 전이,
+       모터 스텝, 상태표시(RGB+LCD)를 한 번에 처리 */
     Elevator_FSM_Update();
 
-    /* ERROR 상태에서도 매 tick 계속 돌아야 하는 논블로킹 서비스들
-       (비상 시에도 부저 엔벨로프/LED 점멸/FND/DHT/Modbus/워치독 유지) */
+    /* ERROR/INSPECTION 상태에서도 매 tick 계속 돌아야 하는 논블로킹 서비스들.
+       (비상 중에도 부저 엔벨로프·LED 점멸·FND 스캔·DHT 측정·Modbus 응답이 멈추면 안 됨) */
     LED_Bar_Update();
     Buzzer_Update();
     FND_Scan();
     DHT_Update();
     Modbus_Update();
 
-    /* 1초 생존 신호 */
+    /* 1초 주기 생존 로그 — 현재층·목표층·FSM 상태를 UART로 확인 */
     if (HAL_GetTick() - last_alive_tick >= 1000)
     {
         printf("Alive floor=%d target=%d state=%d\r\n",
@@ -138,7 +141,8 @@ int main(void)
         last_alive_tick = HAL_GetTick();
     }
 
-    /* 워치독 리프레시 — 모든 경로에서 매 tick 도달 */
+    /* IWDG 리프레시 — 루프 맨 끝에 두어 위쪽 서비스가 전부 끝난 뒤에만 도달하게 한다.
+       중간에서 리프레시하면 블로킹 I2C(LCD) 등이 멎어도 워치독이 리셋을 못 건다. */
     HAL_IWDG_Refresh(&hiwdg);
 
   }
@@ -193,7 +197,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-/* printf 리타겟 → USART2 (ESP8266 연동 전까지 디버그 출력용) */
+/* printf 리타겟 → USART2 디버그 출력. USART1은 RS-485 통신 전용이라 쓰지 않는다. */
 int __io_putchar(int ch)
 {
     if (ch == '\n')
@@ -202,21 +206,22 @@ int __io_putchar(int ch)
     return ch;
 }
 
-/* 포토센서 인터럽트 콜백 */
+/* EXTI 공통 콜백 — 비상정지 버튼(PA8)과 층 포토센서(PA11/PB12/PB2)가 함께 들어온다. */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if (GPIO_Pin == GPIO_PIN_8)   // PA8 = 비상정지 버튼 (NVIC Priority 0)
+    if (GPIO_Pin == GPIO_PIN_8)   // PA8 = 비상정지 버튼. EXTI9_5 우선순위 0으로 포토센서(1)보다 앞선다
     {
-        if (!emergency_active)
+        if (!emergency_active)    // 이미 비상 상태면 중복 처리 불필요
         {
             emergency_active = 1;
-            Motor_Stop();         // 모터 즉시 정지 — 안전 최우선
+            Motor_Stop();         // 모터 즉시 정지 — 메인루프를 기다리지 않고 ISR에서 바로 끊는다
         }
         return;
     }
 
     /* 포토센서: current_floor 갱신 + 목표층 도달 시 Motor_Stop()만 수행.
-       나머지 도착 후처리(LED·부저·문)는 메인루프 step 5에서 단일 처리 */
+       LED·부저·문 등 도착 후처리는 ISR에서 하지 않는다. 부저 엔벨로프처럼
+       주기적 갱신이 필요한 동작은 메인루프의 Elevator_FSM_Update()에서 일괄 처리. */
     Handle_Photo_Interrupt(GPIO_Pin);
 }
 

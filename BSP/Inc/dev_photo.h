@@ -15,9 +15,7 @@ extern volatile uint8_t floor2_transit_flag;
 void Handle_Photo_Interrupt(uint16_t GPIO_Pin);
 
 /* 부팅 시 3개 포토센서를 직접 레벨로 읽어 "지금 실제로 어느 층에 있는지"
- * 확인한다. 인터럽트는 엣지(변화 순간)에만 걸리므로, 전원을 켤 때 이미
- * 2층/3층에 정지해 있으면 감지가 안 되어 current_floor(기본값 1)와
- * 실제 위치가 어긋나는 문제를 막기 위함.
+ * 확인한다. current_floor 기본값(1층)과 실제 위치가 어긋나는 것을 막기 위함.
  * 반환값: 감지된 층(1~3), 어느 센서도 감지 안 되면(층 사이) 0. */
 uint8_t Photo_DetectCurrentFloor(void);
 

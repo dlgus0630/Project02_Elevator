@@ -21,32 +21,38 @@ typedef struct {
     uint8_t loop;         // 반복 횟수
 } Sequence_t;
 
-/* ── 소리 시퀀스 정의 ── */
+/* ── 소리 시퀀스 정의 ──
+ * 각 노트는 { 음(ARR), 유지 시간, 감쇠 속도 }. 감쇠 값이 클수록 소리가 빨리
+ * 잦아들어 짧고 단단하게 들린다. */
+
+/* 도착·문 열림: 높은음 → 낮은음으로 내려가며 부드럽게 여운을 남긴다 */
 static const Sequence_t SEQ_DING = {
     .notes = {
-        { NOTE_E5, 200, 1 }, // E5, 200ms, 느린 감쇠
-        { NOTE_D5, 180, 2 }, // D5, 180ms, 조금 빠른 감쇠
+        { NOTE_E5, 200, 1 },
+        { NOTE_D5, 180, 2 },
     },
     .count = 2,
     .loop  = 1
 };
 
+/* 문 닫힘: 앞음을 짧고 빠르게 끊어 "동~" 하는 닫는 느낌을 준다 */
 static const Sequence_t SEQ_DONG = {
     .notes = {
-        { NOTE_D5, 120, 3 }, // D5, 120ms, 빠른 감쇠
-        { NOTE_B4, 200, 2 }, // B4, 200ms, 중간 감쇠
+        { NOTE_D5, 120, 3 },
+        { NOTE_B4, 200, 2 },
     },
     .count = 2,
     .loop  = 1
 };
 
+/* 비상 경보: 도착음과 같은 두 음을 묵음 구간을 두고 3번 반복해 주의를 끈다 */
 static const Sequence_t SEQ_EMERGENCY = {
     .notes = {
         { NOTE_E5, 200, 1 },
         { NOTE_D5, 180, 2 },
     },
     .count = 2,
-    .loop  = 3   // 3회 반복
+    .loop  = 3
 };
 
 /* ── 플레이어 상태 ── */
@@ -63,11 +69,17 @@ static uint8_t           s_gap_active = 0;  // 묵음 구간 여부
 static uint32_t          s_gap_start  = 0;
 
 /* ── 내부 함수 ── */
+
+/* 노트 하나를 소리내기 시작한다.
+ * ARR로 음 높이를, CCR1(듀티)로 음량을 만든다. 듀티 50%(ARR/2)에서 시작해
+ * Buzzer_Update()가 CCR을 조금씩 깎으며 여운(감쇠)을 만든다. */
 static void play_note(const Note_t *n)
 {
     __HAL_TIM_SET_AUTORELOAD(&htim2, n->arr);
     s_ccr_cur = n->arr / 2;
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, s_ccr_cur);
+    /* 카운터가 새 ARR보다 큰 상태로 남아 있으면 첫 주기가 길게 늘어져
+     * "툭" 하는 잡음이 나므로 0으로 리셋한다 */
     __HAL_TIM_SET_COUNTER(&htim2, 0);
 
     s_note_start = HAL_GetTick();

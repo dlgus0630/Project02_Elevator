@@ -1,10 +1,9 @@
 #include "dev_button.h"
 
 
-/* 버튼 정보 구조체
- * - port      : GPIO 포트
- * - pin       : GPIO 핀 번호
- * - last_tick : 마지막 입력 시간 (디바운스용) */
+/* 버튼 1개의 정보
+ * last_tick : 이 버튼이 마지막으로 인정된 시각(ms). 버튼마다 따로 두어야
+ *             한 버튼의 디바운스가 다른 버튼 입력을 막지 않는다. */
 typedef struct
 {
     GPIO_TypeDef *port;
@@ -15,7 +14,8 @@ typedef struct
 
 
 /* 버튼 목록
- * 인덱스 순서 = ButtonEvent_t 값 (1~5) */
+ * 배열 순서가 곧 이벤트 값이다(인덱스 i → ButtonEvent_t 값 i+1).
+ * 순서를 바꾸면 반환 이벤트가 어긋나므로 주의. */
 static Button_t buttons[] =
 {
     { GPIOB, GPIO_PIN_1,  0 },   // [0] → BTN_EVENT_FLOOR_1
@@ -39,11 +39,12 @@ ButtonEvent_t Button_Scan(void)
 
     for (int i = 0; i < 5; i++)
     {
-        /* 버튼 눌림 확인 */
         if (HAL_GPIO_ReadPin(buttons[i].port,
                              buttons[i].pin) == BUTTON_ACTIVE_STATE)
         {
-            /* 디바운스 시간 통과 확인 */
+            /* 마지막 인정 시각으로부터 BUTTON_DEBOUNCE_MS가 지나야 새 입력으로
+             * 인정한다. 기계식 접점의 채터링(짧게 여러 번 붙었다 떨어지는 현상)과
+             * 손가락을 계속 누르고 있을 때의 연타 입력을 함께 걸러낸다. */
             if (now - buttons[i].last_tick > BUTTON_DEBOUNCE_MS)
             {
                 buttons[i].last_tick = now;

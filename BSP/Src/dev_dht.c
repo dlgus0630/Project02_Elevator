@@ -14,15 +14,14 @@ static uint32_t     s_last_read_tick = 0;
  * [1. 하드웨어 제어용 기본 함수들]
  * ====================================================== */
 
-/* TIM5 타이머를 이용해 원하는 마이크로초(us)만큼 가만히 기다리는 함수 */
+/* TIM5(1틱=1us)로 원하는 마이크로초만큼 대기.
+ * 뺄셈 결과를 uint32_t로 캐스팅해 카운터가 한 바퀴 돌아도(오버플로) 경과 시간이 정확하다. */
 static void Delay_us(uint32_t us)
 {
     uint32_t start_time = __HAL_TIM_GET_COUNTER(&htim5);
 
-    // 현재 시간 - 시작 시간 < 목표 대기 시간일 동안 계속 무한루프(대기)
     while ((uint32_t)(__HAL_TIM_GET_COUNTER(&htim5) - start_time) < us)
     {
-        // 아무것도 안 하고 시간만 보냅니다.
     }
 }
 
@@ -56,7 +55,6 @@ static uint8_t Wait_For_Level(GPIO_PinState target_level, uint32_t timeout_us)
 {
     uint32_t start_time = __HAL_TIM_GET_COUNTER(&htim5);
 
-    // 핀 상태가 우리가 원하는 상태가 아닐 동안 계속 기다림
     while (HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN) != target_level)
     {
         uint32_t elapsed_time = __HAL_TIM_GET_COUNTER(&htim5) - start_time;
@@ -80,17 +78,19 @@ static uint8_t Read_Data_Core(uint8_t* out_data)
     uint8_t bits[40] = {0}; // 센서가 보내는 40개의 0과 1을 임시로 저장할 배열
 
     /* ── 1단계: MCU가 센서에게 "일어나서 데이터 보내!" 라고 신호 주기 ── */
-    Pin_Output(GPIO_PIN_RESET);   // LOW 신호로 18ms 동안 유지 (센서 깨우기)
+    // DHT11 규격상 시작 신호는 LOW를 최소 18ms 유지해야 센서가 깨어난다.
+    Pin_Output(GPIO_PIN_RESET);
     HAL_Delay(18);
 
-    Pin_Output(GPIO_PIN_SET);     // 잠깐 HIGH로 올림
+    // HIGH로 20~40us 올려 "말 끝났다"를 알림 → 30us 선택(규격 중앙값)
+    Pin_Output(GPIO_PIN_SET);
     Delay_us(30);
 
-    Pin_Input();                  // 이제 MCU는 말을 멈추고 센서의 대답을 들을(입력) 준비를 함
+    Pin_Input();                  // MCU는 출력을 멈추고 센서 응답을 들을 준비(입력 모드)
 
 
     /* ── 2단계: 센서가 "네, 준비됐습니다" 하고 응답하는지 확인 ── */
-    // 센서는 LOW -> HIGH -> LOW 순서로 응답을 보냅니다.
+    // 센서 응답 순서: LOW 약 80us → HIGH 약 80us → LOW(첫 비트 시작)
     if (!Wait_For_Level(GPIO_PIN_RESET, WAIT_TIMEOUT_US)) return 0;
     if (!Wait_For_Level(GPIO_PIN_SET,   WAIT_TIMEOUT_US)) return 0;
     if (!Wait_For_Level(GPIO_PIN_RESET, WAIT_TIMEOUT_US)) return 0;
@@ -111,7 +111,8 @@ static uint8_t Read_Data_Core(uint8_t* out_data)
         // HIGH 상태로 머물렀던 시간을 계산
         uint32_t high_duration = __HAL_TIM_GET_COUNTER(&htim5) - high_start_time;
 
-        // HIGH 유지 시간이 40us보다 길면 '1', 짧으면 '0'으로 판별
+        /* DHT11은 비트마다 LOW 50us 뒤 HIGH 길이로 값을 구분한다.
+         * HIGH 약 26~28us면 '0', 약 70us면 '1' → 두 값의 중간인 40us를 기준선으로 삼음 */
         if (high_duration > 40) {
             bits[i] = 1;
         } else {

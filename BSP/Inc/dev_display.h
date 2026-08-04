@@ -10,17 +10,16 @@ extern volatile uint8_t emergency_active;
 extern volatile uint8_t inspection_active;
 
 /* =========================================================
- * 1. LED 바 (8-LED, 74HC595) — PA7(SER) / PB6(SRCLK) / PC7(RCLK)
- *    ※ SRCLK: PB6 -> PC10 -> PB6 (FND가 PB3~5로 옮겨가며 재확보)
+ * 1. LED 바 (8-LED, 74HC595 시프트 레지스터 1개로 구동)
  * ========================================================= */
 #define LED_DATA_PORT   GPIOA
-#define LED_DATA_PIN    GPIO_PIN_7   // DS    (데이터)
+#define LED_DATA_PIN    GPIO_PIN_7   // DS(SER)     : 직렬 데이터 입력
 
 #define LED_CLK_PORT    GPIOB
-#define LED_CLK_PIN     GPIO_PIN_6   // SH_CP (클럭)
+#define LED_CLK_PIN     GPIO_PIN_6   // SH_CP(SRCLK): 시프트 클럭
 
 #define LED_LATCH_PORT  GPIOC
-#define LED_LATCH_PIN   GPIO_PIN_7   // ST_CP (래치)
+#define LED_LATCH_PIN   GPIO_PIN_7   // ST_CP(RCLK) : 출력 래치
 
 void LED_Bar_Update(void);   // 메인루프에서 매번 호출(논블로킹)
 void LED_Bar_Go_Up(void);    // 상승 시작 시 호출
@@ -29,14 +28,14 @@ void LED_Bar_Arrive(void);   // 도착 시 호출 (3번 깜빡 후 OFF)
 void LED_Bar_Depart(void);   // 출발 시 호출 (3번 깜빡 후 전체 ON)
 
 /* =========================================================
- * 2. FND (7-Segment, 74HC595) — PB5(SER) / PB4(SRCLK) / PB3(RCLK)
- *    ※ PB9/PB8/PC9 -> PB5/PB4/PB3 (I2C1을 PB8/PB9로 옮기며 재배치)
+ * 2. FND (7세그먼트 1자리, 74HC595) — PB5(SER) / PB4(SRCLK) / PB3(RCLK)
  * ========================================================= */
-void FND_Shift_Data(uint8_t data);
-void FND_Scan(void);
+void FND_Shift_Data(uint8_t data);   // 0~9는 숫자, 10='E', 11=공백, 12='-'
+void FND_Scan(void);                 // 메인루프에서 매번 호출(현재 층/에러 표시)
 
 /* =========================================================
- * 3. RGB 운행 상태 LED — PA0(R) / PA1(G) / PA4(B), 공통캐소드 가정
+ * 3. RGB 운행 상태 LED — PA0(R) / PA1(G) / PA4(B)
+ *    공통캐소드(공통 핀이 GND) 기준: 핀을 HIGH로 하면 해당 색이 켜짐
  * ========================================================= */
 typedef enum {
     RGB_OFF = 0,

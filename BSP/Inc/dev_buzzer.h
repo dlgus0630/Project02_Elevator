@@ -6,7 +6,8 @@
 /* TIM2 핸들 (tim.c에서 선언됨) */
 extern TIM_HandleTypeDef htim2;
 
-/* 음계별 ARR 설정값 (TIM2 PSC=99, 1MHz 기준) */
+/* 음계별 ARR 설정값 (TIM2 PSC=99 → 카운터 클럭 1MHz)
+ * ARR = 1,000,000 / 원하는 주파수(Hz) */
 #define NOTE_B4    2024   // 494 Hz
 #define NOTE_D5    1702   // 587 Hz
 #define NOTE_E5    1516   // 659 Hz
