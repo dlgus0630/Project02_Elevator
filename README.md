@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🛗 STM32F411 엘리베이터 : RS-485 기반 3층 엘리베이터 제어
+# 🛗 STM32F411 엘리베이터 : RS-485 기반 분산형 제어 시스템
 
-### Elevator Car Control System (Personal Project)
+### RS-485-Based Distributed Control (Solo Project)
 
 <br>
 
