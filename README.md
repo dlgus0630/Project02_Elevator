@@ -36,7 +36,7 @@
 
 <br>
 
-3층 규모의 엘리베이터 카(car)를 논블로킹 FSM으로 제어하는 **STM32F411 기반 임베디드 시스템**입니다. 스텝모터로 카를 이동시키고, 서보모터로 문을 여닫으며, 포토센서로 층을 감지합니다. **RS-485(Modbus RTU)로 별도의 관제실 보드와 통신**하여 원격에서 목표층 지정, 비상정지 해제, 점검 모드 전환, 온·습도 모니터링이 가능하며, 이동 타임아웃·층 건너뜀·고온 경고 등을 감지하는 **계층형 오류코드 체계(E101~E402)**를 갖췄습니다.
+3층 규모의 엘리베이터 카(car)를 논블로킹 FSM으로 제어하는 **STM32F411 기반 임베디드 시스템**입니다. 스텝모터로 카를 이동시키고, 서보모터로 문을 여닫으며, 포토센서로 층을 감지합니다. **RS-485(Modbus RTU)로 별도의 관제실 보드와 통신**하여 원격에서 목표층 지정, 비상정지 해제, 점검 모드 전환, 온·습도 모니터링이 가능하며, 이동 타임아웃·층 건너뜀·고온 경고 등을 감지하는 계층형 오류코드 체계(E101~E402)를 갖췄습니다.
 
 <br>
 
@@ -281,14 +281,14 @@ CubeMX가 생성한 HAL 초기화 코드(`Core/`)와, 직접 작성한 디바이
 ├──────────────────────────────────────────────────┤
 │                                                  │
 │   BSP/       부품 드라이버 (부품과 어떻게 대화하나) │
-│              dev_button · dev_servo · dev_stepper │
-│              dev_buzzer · dev_dht · dev_photo     │
-│              dev_display (LCD/RGB/LED바/FND)      │
+│              dev_button · dev_servo · dev_stepper│
+│              dev_buzzer · dev_dht · dev_photo    │
+│              dev_display (LCD/RGB/LED바/FND) │
 │                                                  │
 ├──────────────────────────────────────────────────┤
 │                                                  │
-│   Core/      CubeMX HAL 초기화 (레지스터 설정)     │
-│              gpio · tim · usart · i2c · iwdg      │
+│   Core/      CubeMX HAL 초기화 (레지스터 설정)   │
+│              gpio · tim · usart · i2c · iwdg     │
 │                                                  │
 └──────────────────────────────────────────────────┘
 ```
@@ -307,7 +307,7 @@ FSM은 `Display_Update(state, error_code)` 한 번 호출로 위 네 장치를 �
 ```
 Project02_Elevator/
 ├── Core/
-│   ├── Inc, Src            # CubeMX 생성 HAL 초기화 (gpio/tim/usart/i2c/iwdg), main.c
+│   ├── Inc, Src             # CubeMX 생성 HAL 초기화 (gpio/tim/usart/i2c/iwdg), main.c
 │   └── Startup              # 스타트업 어셈블리, 링커 스크립트
 ├── BSP/
 │   ├── Inc, Src
@@ -403,8 +403,8 @@ loop (매 반복)
  ├─ LED_Bar_Update()           운행 방향 LED 애니메이션 (논블로킹)
  ├─ Buzzer_Update()            음계 재생 + 감쇠 엔벨로프 (논블로킹)
  ├─ FND_Scan()                 7세그먼트 표시 갱신
- ├─ DHT_Update()                5초 주기로 온습도 재측정
- ├─ Modbus_Update()             5ms 이상 침묵 시 수신 프레임 해석/응답
+ ├─ DHT_Update()               5초 주기로 온습도 재측정
+ ├─ Modbus_Update()            5ms 이상 침묵 시 수신 프레임 해석/응답
  ├─ 1초 주기 생존 로그 출력 (현재층/목표층/FSM 상태)
  └─ HAL_IWDG_Refresh()         루프 맨 끝에서 워치독 갱신
 ```
