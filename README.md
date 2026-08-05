@@ -86,7 +86,7 @@
 
 ## 3. 프로젝트 개요
 
-**기간** : 2026.06.24 ~ 08.04 | **인원** : 개인 프로젝트
+**기간** : 2026.06.24 ~ 08.04 (실 작업일 6일) | **인원** : 개인 프로젝트
 
 ### 3-1. 프로젝트 일정
 
@@ -191,14 +191,14 @@ CubeMX가 생성한 HAL 초기화 코드(`Core/`)와, 직접 작성한 디바이
 ├──────────────────────────────────────────────────┤
 │                                                  │
 │   BSP/       부품 드라이버 (부품과 어떻게 대화하나) │
-│              dev_button · dev_servo · dev_stepper │
-│              dev_buzzer · dev_dht · dev_photo     │
-│              dev_display (LCD/RGB/LED바/FND)      │
+│              dev_button · dev_servo · dev_stepper│
+│              dev_buzzer · dev_dht · dev_photo    │
+│              dev_display (LCD/RGB/LED바/FND) │
 │                                                  │
 ├──────────────────────────────────────────────────┤
 │                                                  │
-│   Core/      CubeMX HAL 초기화 (레지스터 설정)     │
-│              gpio · tim · usart · i2c · iwdg      │
+│   Core/      CubeMX HAL 초기화 (레지스터 설정)   │
+│              gpio · tim · usart · i2c · iwdg     │
 │                                                  │
 └──────────────────────────────────────────────────┘
 ```
