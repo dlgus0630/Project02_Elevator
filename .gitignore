@@ -4,3 +4,6 @@ Release/
 
 # IDE 워크스페이스 설정 (개인 환경 파일)
 *.code-workspace
+
+# Claude Code 로컬 세션/설정 폴더 (개인 환경, 버전 관리 대상 아님)
+.claude/
