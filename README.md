@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛗 STM32F411 엘리베이터 카 제어 시스템 : RS-485 Modbus 기반 3층 엘리베이터 제어
+# 🛗 STM32F411 엘리베이터 : RS-485 Modbus 기반 3층 엘리베이터 제어
 
 ### Elevator Car Control System (Personal Project)
 
