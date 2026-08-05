@@ -217,7 +217,7 @@ FSM은 `Display_Update(state, error_code)` 한 번 호출로 위 네 장치를 �
 ```
 Project02_Elevator/
 ├── Core/
-│   ├── Inc, Src            # CubeMX 생성 HAL 초기화 (gpio/tim/usart/i2c/iwdg), main.c
+│   ├── Inc, Src             # CubeMX 생성 HAL 초기화 (gpio/tim/usart/i2c/iwdg), main.c
 │   └── Startup              # 스타트업 어셈블리, 링커 스크립트
 ├── BSP/
 │   ├── Inc, Src
@@ -313,8 +313,8 @@ loop (매 반복)
  ├─ LED_Bar_Update()           운행 방향 LED 애니메이션 (논블로킹)
  ├─ Buzzer_Update()            음계 재생 + 감쇠 엔벨로프 (논블로킹)
  ├─ FND_Scan()                 7세그먼트 표시 갱신
- ├─ DHT_Update()                5초 주기로 온습도 재측정
- ├─ Modbus_Update()             5ms 이상 침묵 시 수신 프레임 해석/응답
+ ├─ DHT_Update()               5초 주기로 온습도 재측정
+ ├─ Modbus_Update()            5ms 이상 침묵 시 수신 프레임 해석/응답
  ├─ 1초 주기 생존 로그 출력 (현재층/목표층/FSM 상태)
  └─ HAL_IWDG_Refresh()         루프 맨 끝에서 워치독 갱신
 ```
